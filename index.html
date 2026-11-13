@@ -27,7 +27,7 @@
 <canvas id="c" aria-hidden="true"></canvas>
 <nav id="nav" aria-label="챕터"></nav>
 
-<section class="short" data-s="0"><h1 class="sr">당연하게 두지 않기 — 당연한 불편함을 당연하게 두지 않습니다</h1></section>
+<section class="short" data-s="0"><h1 class="sr">불편한 건, 당연한 게 아닙니다</h1></section>
 <section data-s="1"><h2 class="sr">01 회사 주문 정리 자동화: 정확도 약 60%에서 약 99%, 본인 보고</h2></section>
 <section data-s="2"><h2 class="sr">02 유튜브 제작 자동화: 썸네일 보정 3분에서 30초(6배), 자막 60분에서 5분(12배), 본인 보고</h2></section>
 <section data-s="3"><h2 class="sr">03 부모님을 위한 쇼츠 편집 프로그램: 세 단계, MP4 출력 확인</h2></section>
@@ -71,6 +71,9 @@
   // 챕터 표식 + 출처 태그 (글자 최소)
   function tag(n,label,src,a){ const s=Math.max(11,S*.022); txt(n,24,32,s,a*.9,800,'left'); txt(label,24+s*2,32,s,a*.45,500,'left'); if(src) txt(src,W-24-(W>600?24:16),H-28,Math.max(10,S*.018),a*.35,500,'right'); }
   const J = reduce ? 0 : 1;
+  // 하단 한 줄 설명: [시작, 끝, 문구]
+  function cap(p,a,list){ const sz=Math.max(14,Math.min(S*.032,24)); list.forEach(([s0,s1,str])=>{ const al=seg(p,s0,s0+.05)*(1-seg(p,s1-.05,s1))*a; txt(str,W/2,H-92,sz,al*.9,500); }); }
+  function lab(str,x,y,a,col=C.ink){ txt(str,x,y,Math.max(11,S*.022),a*.6,500,'center',col); }
 
   /* ---------- 0. HERO: 흩어진 점 → 정렬 ---------- */
   const heroN = 420, hr = rng(7), hero = [];
@@ -87,9 +90,11 @@
       const col = mixc(i%3?C.red:C.amber, C.ink, m);
       circle(x,y,lerp(2.2+Math.sin(t*3+d.ph)*1.2*jit,1.6,m),rgba(col,lerp(.8,.55,m)));
     }
-    const ta = seg(p,.55,.75);
-    ctx.fillStyle=rgba(C.bg,.6*ta); ctx.fillRect(0,H/2-S*.09,W,S*.18);
-    txt('당연하게 두지 않기',W/2,H/2,Math.min(W*.085,S*.1),ta,800);
+    ctx.fillStyle=rgba(C.bg,.7); ctx.fillRect(0,H/2-S*.12,W,S*.24);
+    const fs=Math.min(W*.075,S*.085);
+    txt('불편한 건,',W/2,H/2-fs*.6,fs,1,800,'center',mixc(C.red,C.ink,m));
+    txt('당연한 게 아닙니다.',W/2,H/2+fs*.6,fs,1,800);
+    txt('문제를 발견하고, 직접 만들어 해결합니다.',W/2,H/2+fs*1.9,Math.max(13,S*.026),seg(p,.5,.7)*.7,500);
     // 스크롤 힌트
     const ha = 1-seg(p,0,.08), by = H-50+Math.sin(t*3)*6*J;
     ctx.strokeStyle=rgba(C.ink,.5*ha); ctx.lineWidth=1.5; ctx.beginPath(); ctx.moveTo(W/2-8,by-4); ctx.lineTo(W/2,by+4); ctx.lineTo(W/2+8,by-4); ctx.stroke();
@@ -118,6 +123,9 @@
       if(o.type===1&&pa>.5){ ctx.strokeStyle=rgba(C.bg,.8*a); ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(x+6,y+h/2); ctx.lineTo(x+w-6,y+h/2); ctx.stroke(); }
       if(o.type===2&&pa>.5){ txt('→',x+w-12,y+h/2,h*.6,a*.9*(1-pb),800,'center',C.bg); }
     });
+    ['신규','취소','정정'].forEach((l,k)=>lab(l,W*(.22+.28*k),H*.26,a*pa*(1-pb),TC[k]));
+    cap(p,a,[[0,.4,'단톡방 주문을 사람이 한 줄씩 엑셀로 옮겨 적었습니다'],[.4,.62,'같은 \'1\'도 새 주문·취소·정정으로 뜻이 달랐습니다'],[.62,1.01,'Python으로 자동 정리, 마지막 확인은 사람이']]);
+    lab('정리 정확도',W/2,H*.2+S*.075+20,seg(p,.5,.65)*a);
     // 정확도 게이지
     const v = Math.round(lerp(60,99,ease(seg(p,.6,.92))));
     const ga=seg(p,.5,.65)*a, gx=W/2, gy=H*.2, gr=S*.075;
@@ -136,7 +144,7 @@
       const lx0=W*.12, lx1=W*.88, mid=W/2, cw=Math.min(S*.12,90), chh=cw*.56;
       [[H*.42,1,'3:00'],[H*.66,6,'0:30']].forEach(([ly,n,lab],li)=>{
         ctx.strokeStyle=rgba(C.ink,.12*pa); ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(lx0,ly); ctx.lineTo(lx1,ly); ctx.stroke();
-        txt(lab,lx0,ly-chh*.9,Math.max(11,S*.024),pa*.5,600,'left');
+        txt((li?'이후 ':'이전 ')+lab,lx0,ly-chh*.9,Math.max(11,S*.024),pa*.5,600,'left');
         for(let k=0;k<n;k++){
           const pr = n===1 ? ph : clamp(ph*n-k);
           if(n>1 && (ph*n<k)) continue;
@@ -147,6 +155,7 @@
         ctx.strokeStyle=rgba(C.amber,.5*pa); ctx.setLineDash([3,5]); ctx.beginPath(); ctx.moveTo(mid,ly-chh); ctx.lineTo(mid,ly+chh); ctx.stroke(); ctx.setLineDash([]);
       });
       txt('×6',W/2,H*.2,S*.11,pa*seg(p,.08,.2),800);
+      lab('썸네일 보정',W/2,H*.2+S*.08,pa*seg(p,.08,.2));
     }
     if(pb>0){
       const m=ease(seg(p,.6,.85)), n=bars.length;
@@ -169,6 +178,10 @@
       rr(W/2-tw/2,H*.34,tw*tm/60,4,2); ctx.fillStyle=rgba(mixc(C.mint,C.red,tm/60),pb); ctx.fill();
       txt(Math.round(tm)+'′',W/2+tw/2,H*.34-16,Math.max(11,S*.026),pb*.6,600,'right');
       txt('×12',W/2,H*.2,S*.11,pb*seg(p,.82,.9),800);
+      lab('자막 작업',W/2,H*.2+S*.08,pb*seg(p,.82,.9));
+    }
+    cap(p,a,[[0,.22,'썸네일 이미지 보정, 한 장에 3분'],[.22,.48,'보정 프로그램으로 한 장에 30초'],[.5,.72,'자막을 받아 적고 맞추는 데 한 편에 1시간'],[.72,1.01,'자동 자막 프로그램으로 5분 · 지금도 두 채널에서 사용']]);
+    {
     }
   }
 
@@ -190,13 +203,15 @@
       const r=R*m*(1+(on&&!reduce?Math.sin(t*4)*0.0:0));
       circle(x,cy,r,rgba(on?C.mint:C.ink,(on?.9:.1)*a),rgba(C.ink,.4*a*m),1.5);
       txt(String(k+1),x,cy,r*.7,a*m,800,'center',on?C.bg:C.ink);
+      lab(['영상 고르기','만들기','저장하기'][k],x,cy+R+18,a*m);
       if(k<2){ ctx.strokeStyle=rgba(C.ink,.2*a*m); ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(x+r+8,cy); ctx.lineTo(cxs[k+1]-R*m-8,cy); ctx.stroke(); }
     });
     // 진행 점
     if(go>0&&go<1){ const k=Math.min(2,Math.floor(go*3)), f=go*3-k; const x=k<2?lerp(cxs[k],cxs[k+1],ease(f)):cxs[2]; circle(x,cy-R-18,5,rgba(C.amber,a)); }
     // 완료 표시: MP4
     const da=seg(p,.88,.96)*a;
-    if(da>0){ const x=cxs[2], y=cy+R+S*.08; rr(x-S*.07,y-S*.03,S*.14,S*.06,6); ctx.fillStyle=rgba(C.mint,da*.2); ctx.fill(); txt('MP4',x,y,S*.03,da,800,'center',C.mint); }
+    cap(p,a,[[0,.4,'일반 편집 프로그램은 부모님께 너무 복잡했습니다'],[.4,.88,'기능은 그대로, 보이는 것은 세 단계로'],[.88,1.01,'부모님이 직접 써 보고 MP4 완성']]);
+    if(da>0){ const x=cxs[2], y=cy+R+S*.11; rr(x-S*.07,y-S*.03,S*.14,S*.06,6); ctx.fillStyle=rgba(C.mint,da*.2); ctx.fill(); txt('MP4',x,y,S*.03,da,800,'center',C.mint); }
   }
 
   /* ---------- 4. 친구 앱: 필수칸 → 하나 / 정산 ---------- */
@@ -215,6 +230,7 @@
       // 커서 깜빡임
       if(m>.9&&Math.floor(t*2)%2===0){ ctx.fillStyle=rgba(C.mint,pa); ctx.fillRect(W/2-fw/2+16,H*.5-fh/3,2,fh*.66); }
     }
+    cap(p,a,[[0,.3,'모든 칸이 필수인 기록 앱, 친구에게는 번거로웠습니다'],[.3,.5,'모든 칸을 선택 입력으로 — 가장 빠르게'],[.5,.75,'단체 여행 돈 걷기에 일주일쯤 걸렸지만'],[.75,1.01,'엑셀 내보내기로 정산이 그날 끝났습니다']]);
     if(pb>0){
       const m=ease(seg(p,.6,.86));
       const px=[W/2-S*.3,W/2,W/2+S*.3], base=H*.68, cr=S*.028, gap=cr*2.2;
@@ -227,6 +243,8 @@
         circle(lerp(x0,x1,m),lerp(y0,y1,m)-lift,cr,rgba(sp!==ep?mixc(C.amber,C.mint,m):C.amber,.9*pb));
       });
       txt('당일',W/2,H*.2,S*.1,pb*seg(p,.84,.92),800);
+      ['A','B','C'].forEach((l,k)=>txt(l,px[k],base+S*.08,S*.03,pb,800,'center',C.bg));
+      lab('여행 정산 완료',W/2,H*.2+S*.075,pb*seg(p,.84,.92));
     }
   }
 
@@ -247,12 +265,14 @@
         if(m>.5){ const lw=(dw-48)*(.5+q.o*.5)*(m-.5)*2; rr(dx+24,y1-3,lw,6,3); ctx.fillStyle=rgba(q.L===0?C.mint:C.ink,a*fade*.12); ctx.fill(); }
       });
     }
+    cap(p,a,[[0,.25,'보건증 예약·서류·대기 장소, 같은 질문이 반복됐습니다'],[.25,.48,'아무도 시키지 않았지만 안내 블로그를 썼습니다'],[.48,1.01,'약 1,500명이 읽었습니다']]);
     if(d>0){
       const cols=W>H?60:30, rows=Math.ceil(1500/cols), ds=Math.min(W*.8/cols,H*.5/rows);
       const gx=W/2-(cols-1)*ds/2, gy=H*.6-(rows-1)*ds/2, shown=Math.floor(1500*ease(d));
       ctx.fillStyle=rgba(C.mint,.85*a*seg(p,.46,.52));
       for(let i=0;i<shown;i++){ ctx.fillRect(gx+(i%cols)*ds-ds*.3,gy+Math.floor(i/cols)*ds-ds*.3,ds*.6,ds*.6); }
       txt(shown.toLocaleString('ko-KR'),W/2,H*.2,S*.1,a*seg(p,.46,.55),800);
+      lab('블로그 방문자 (성남 지역)',W/2,H*.2+S*.075,a*seg(p,.46,.55));
     }
   }
 
@@ -276,8 +296,9 @@
     }
     // 이동 점
     if(cur>=0&&idx<path.length-1){ const f=ease(run-idx); const [x0,y0]=pos(path[idx]),[x1,y1]=pos(path[idx+1]); circle(lerp(x0,x1,f),lerp(y0,y1,f),5,rgba(C.amber,a)); }
+    cap(p,a,[[0,.4,'무엇을, 왜 만들지는 제가 정합니다'],[.4,1.01,'문제 정의와 결과 확인은 나, 구현 반복(5~9)은 AI와 함께']]);
     // 범례
-    const la=a*seg(p,.2,.35), ly=H-60, ls=Math.max(11,S*.024);
+    const la=a*seg(p,.2,.35), ly=H-44, ls=Math.max(11,S*.024);
     circle(W/2-60,ly,6,rgba(C.ink,la)); txt('나',W/2-46,ly,ls,la*.8,600,'left');
     circle(W/2+20,ly,6,rgba(C.mint,la)); txt('AI',W/2+34,ly,ls,la*.8,600,'left');
   }
@@ -301,6 +322,7 @@
       const fl = d.ri===3 ? .35+.35*Math.sin(t*2+d.ph)*J : .9;
       circle(cx+Math.cos(an)*R,cy+Math.sin(an)*R,d.ri===0?7:3,rgba(d.ri===0?C.amber:(d.ri===3?C.mint:C.ink),fl*a*g));
     });
+    cap(p,a,[[0,.78,'다음은 더 많은 사람의 일상에서 시작합니다']]);
     const ea=seg(p,.78,.9)*a;
     txt('SK AIGEN',W/2,H-56,Math.max(13,S*.03),ea,800);
     txt('화면 속 예시는 설명용 재현',W/2,H-30,Math.max(10,S*.017),ea*.35,500);
