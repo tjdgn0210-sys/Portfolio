@@ -38,7 +38,8 @@
 <section id="ch4" data-s="4"><h2 class="sr">04 친구 맞춤형 지출·루틴 앱: 금액 입력과 영수증 첨부 중심으로 빠르고 정확하게 맞춤 제작, 여행 정산 약 일주일에서 당일로, 사용자 보고</h2></section>
 <section id="ch5" data-s="5"><h2 class="sr">05 보건소 예약 안내 블로그: 같은 질문 문의 빈도 60% 감소(본인 보고), 누적 조회수 2,425회(기록, 2026.11.13 기준)</h2></section>
 <section id="ch6" data-s="6"><h2 class="sr">06 AI와 일하는 방식: 문제 정의와 결과 확인은 직접, 구현 5~9단계는 AI와 반복</h2></section>
-<section id="ch7" data-s="7"><h2 class="sr">07 방향: 나, 가까운 사람, 처음 만난 사람들, 더 많은 사람. 화면 속 예시는 설명용 재현입니다.</h2></section>
+<section id="ape" data-s="7"><h2 class="sr">07 못지키면 유인원(APE): 계획을 지키기 어려워서, 완료가 아니라 시작을 성공으로 만든 계획 앱</h2></section>
+<section id="ch7" data-s="8"><h2 class="sr">08 방향: 나, 가까운 사람, 처음 만난 사람들, 더 많은 사람. 화면 속 예시는 설명용 재현입니다.</h2></section>
 
 <script>
 (() => {
@@ -432,6 +433,79 @@
     tag('06','AI와 일하는 방식','',a);
   }
 
+  /* ---------- 7. 못지키면 유인원 (APE) ---------- */
+  // 앱의 실제 그림(걷는 유인원 프레임, 단계 아이콘)을 밝은 색으로 바꿔 쓴다
+  const apeWalk=new Image(); apeWalk.src='assets/case03/ape-walk.webp';
+  const apeStages=[0,1,2,3,4].map(k=>{ const im=new Image(); im.src='assets/case03/stage-'+k+'.webp'; return im; });
+  const PLANS=['영어 공부','운동 30분','책 20쪽','방 정리','블로그 글','이력서 수정','코딩 연습','영상 편집','장보기','일찍 자기','스트레칭','메일 답장','강의 듣기','일기','빨래','영어 단어'];
+  const r8=rng(61), pileRows=[]; for(let i=0;i<34;i++) pileRows.push({x:r8(),d:r8(),rot:(r8()-.5)*.5,txt:PLANS[i%PLANS.length]});
+  function sApe(p,t,a){
+    const A=a*(1-seg(p,.33,.38)), B=a*seg(p,.36,.41)*(1-seg(p,.58,.62)), Cc=a*seg(p,.6,.65);
+    if(A>0){
+      // 쌓여 가는 못 지킨 계획
+      const rw=Math.min(W*.42,260), rh=Math.max(30,S*.055);
+      pileRows.forEach((r,i)=>{
+        const f=ease(seg(p,.02+r.d*.24,.08+r.d*.24)); if(f<=0) return;
+        const col=V?2:4, cx=W*(V?.25:.14)+(i%col)*(W*(V?.5:.24)), floor=H*.86-Math.floor(i/col)*rh*1.05;
+        const y=lerp(-rh*2,floor,f), x=cx-rw/2+(r.x-.5)*30;
+        ctx.save(); ctx.translate(x+rw/2,y); ctx.rotate(r.rot*(1-f*.6)); ctx.globalAlpha=A*.85;
+        rr(-rw/2,-rh/2,rw,rh,8); ctx.fillStyle=rgba(C.panel,1); ctx.fill(); ctx.strokeStyle=rgba(C.ink,.12); ctx.lineWidth=1; ctx.stroke();
+        rr(-rw/2+10,-7,14,14,3); ctx.strokeStyle=rgba(C.red,.8); ctx.lineWidth=1.5; ctx.stroke();
+        txt(r.txt,-rw/2+32,0,Math.max(11,rh*.36),1,600,'left',i%3===0?C.red:C.dim);
+        ctx.restore();
+      });
+      ctx.fillStyle=rgba(C.bg,.7*A); ctx.fillRect(0,H*.2,W,S*.26);
+      const fs=Math.min(W*.07,S*.07);
+      txt('계획을 세우는 건 쉬웠습니다.',W/2,H*.2+S*.08,fs,A*seg(p,.04,.1),800);
+      txt('지키는 건 어려웠습니다.',W/2,H*.2+S*.08+fs*1.3,fs,A*seg(p,.16,.22),800,'center',C.red);
+    }
+    if(B>0){
+      const fs=Math.min(W*.09,S*.1), y1=H*.42, y2=y1+fs*1.25;
+      ctx.font=`800 ${fs}px ${FONT}`; const w1=ctx.measureText('완료').width, wAll=ctx.measureText('완료가 아니라,').width;
+      txt('완료가 아니라,',W/2,y1,fs,B,800,'center',C.dim);
+      const sx=W/2-wAll/2; line(sx-4,y1,sx-4+(w1+8)*ease(seg(p,.42,.48)),y1,rgba(C.red,B),Math.max(3,fs*.08));
+      const k=ease(seg(p,.46,.53));
+      txt('시작을 성공으로.',W/2,y2,fs*(.9+.1*k),B*k,800,'center',C.mint);
+    }
+    if(Cc>0){
+      // 앱의 '지금 할 일' 카드 + 시작 버튼
+      const cw=Math.min(W*.82,440), chh=cw*.5, cx=W/2-cw/2, cy=H*.24;
+      const press=seg(p,.74,.78), fill=ease(seg(p,.76,.86));
+      ctx.save(); rr(cx,cy,cw,chh,22); ctx.clip();
+      ctx.fillStyle=rgba([20,20,22],Cc); ctx.fillRect(cx,cy,cw,chh);
+      const bx=cx+cw-cw*.2, by=cy+chh*.2;
+      circle(bx,by,fill*cw*1.3,rgba([31,163,111],Cc));
+      ctx.restore();
+      txt('영어 공부',cx+cw*.06,cy+chh*.2,cw*.065,Cc,800,'left');
+      txt('14:00 - 15:00',cx+cw*.06,cy+chh*.34,cw*.035,Cc*.6,500,'left');
+      const bs=1-.12*Math.sin(press*Math.PI);
+      ctx.save(); ctx.translate(bx,by); ctx.scale(bs,bs);
+      rr(-cw*.1,-chh*.1,cw*.2,chh*.2,chh*.1); ctx.fillStyle=rgba(fill>0?[255,255,255]:[255,255,255],Cc*(fill>0?.25:1)); ctx.fill();
+      txt(fill>0?'시작함':'시작',0,0,cw*.042,Cc,800,'center',fill>0?C.ink:[17,17,17]);
+      ctx.restore();
+      const left=Math.max(0,252-seg(p,.62,.76)*40);
+      txt(fill>0?'시작 기록됨':'시작 마감까지',cx+cw*.06,cy+chh*.66,cw*.032,Cc*.6,500,'left');
+      txt(fill>0?'성공':(String(Math.floor(left/60)).padStart(2,'0')+':'+String(Math.floor(left%60)).padStart(2,'0')),cx+cw*.94,cy+chh*.62,cw*.1,Cc,800,'right');
+      const ty=cy+chh*.86, tw=cw*.88, tx=cx+cw*.06, prog=fill>0?1:lerp(.16,.3,seg(p,.62,.76));
+      rr(tx,ty,tw,3,1.5); ctx.fillStyle=rgba(C.ink,.2*Cc); ctx.fill(); rr(tx,ty,tw*prog,3,1.5); ctx.fillStyle=rgba(C.ink,Cc); ctx.fill();
+      // 걷는 유인원 (시작하면 뛰어올라 날아감)
+      if(apeWalk.complete&&apeWalk.naturalWidth){
+        const fw=167,fh=146, fr=Math.floor(t*14*(J||0))%16, aw=cw*.12, ah=aw*fh/fw;
+        const jump=seg(p,.77,.9);
+        const ax=tx+tw*prog-aw/2+jump*cw*.5, ay=ty-ah-Math.sin(jump*Math.PI*.9)*chh*.9-jump*chh*.4;
+        ctx.globalAlpha=Cc*(1-seg(p,.86,.92)); ctx.drawImage(apeWalk,fr*fw,0,fw,fh,ax,ay,aw,ah); ctx.globalAlpha=1;
+      }
+      const ma=Cc*seg(p,.82,.88), fs=Math.min(W*.05,S*.05);
+      txt('시작했습니다.',W/2,cy+chh+S*.1,fs,ma,800);
+      txt('그걸로 첫 번째 성공입니다.',W/2,cy+chh+S*.1+fs*1.3,fs,ma,800,'center',C.mint);
+      // 못 지키면: 단계 아이콘 (현대인 → 유인원)
+      const ia=Cc*seg(p,.88,.94), isz=Math.min(S*.12,W*.16), gap=isz*1.05, ix0=W/2-gap*2;
+      apeStages.forEach((im,k)=>{ if(im.complete&&im.naturalWidth){ ctx.globalAlpha=ia*(k===0?1:.45); ctx.drawImage(im,ix0+k*gap-isz/2,H-92-isz*1.25,isz,isz); ctx.globalAlpha=1; } });
+    }
+    cap(p,a,[[0,.36,'계획을 못 지키는 저를 위해 만든 앱입니다.'],[.36,.6,'계획을 지키기 어려워서, 성공의 기준부터 바꿨습니다.'],[.6,.88,'일정 시각부터 5분 안에 [시작]을 누르면 성공. 완료 체크는 없습니다.'],[.88,1.01,'못 지키면, 한 단계씩 유인원이 됩니다.']]);
+    tag('07','못지키면 유인원','개인 프로젝트 · 화면은 설명용 재현',a);
+  }
+
   /* ---------- 7. 방향 ---------- */
   const pr7=rng(53), ppl=[]; [1,8,22,60].forEach((n,ri)=>{ for(let i=0;i<n;i++) ppl.push({ri,an:i/n*6.28+pr7()*.3,ph:pr7()*6.28}); });
   const ringLab=['나','가까운 사람','처음 만난 사람들','더 많은 사람'];
@@ -454,10 +528,10 @@
     cap(p,a,[[0,1.01,'지금까지는 가까운 사람의 문제였습니다. 다음은 더 많은 사람의 일상입니다.']]);
     const ea=seg(p,.8,.9)*a;
     txt('SK AIGEN 지원 포트폴리오 · 화면 속 예시는 설명용 재현',W/2,H-24,Math.max(10,S*.018),ea*.45,500);
-    tag('07','방향','',a);
+    tag('08','방향','',a);
   }
 
-  const scenes=[s0,s1,s2,s3,s4,s5,s6,s7];
+  const scenes=[s0,s1,s2,s3,s4,s5,s6,sApe,s7];
 
   // 네비게이션
   secs.forEach((s,i)=>{ const b=document.createElement('button'); b.type='button'; b.setAttribute('aria-label',i===0?'처음':'챕터 '+i); b.addEventListener('click',()=>scrollTo({top:s.offsetTop+(i?innerHeight*.3:0),behavior:reduce?'auto':'smooth'})); nav.appendChild(b); });
@@ -474,7 +548,7 @@
     ctx.fillStyle=rgba(C.bg,1); ctx.fillRect(0,0,W,H);
     ctx.save(); scenes[i](p,T,a); ctx.restore();
     const tot=document.documentElement.scrollHeight-H; bar.style.width=(tot>0?y/tot*100:0)+'%';
-    if(i!==lastOn){ dots.forEach((d,k)=>d.classList.toggle('on',k===i)); const cl={1:'case-01.html',3:'case-02.html'}[i]; if(cl) caseLink.href=cl; caseLink.classList.toggle('on',!!cl); lastOn=i; }
+    if(i!==lastOn){ dots.forEach((d,k)=>d.classList.toggle('on',k===i)); const cl={1:'case-01.html',3:'case-02.html',7:'case-03.html'}[i]; if(cl) caseLink.href=cl; caseLink.classList.toggle('on',!!cl); lastOn=i; }
     requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);
