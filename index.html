@@ -32,13 +32,13 @@
 <a id="caseLink" href="case-01.html">사례 자세히 보기 →</a>
 
 <section class="short" data-s="0"><h1 class="sr">불편한 건, 당연한 게 아닙니다. 문제를 발견하고, 직접 만들어 해결합니다.</h1></section>
-<section data-s="1"><h2 class="sr">01 회사 주문 정리 자동화: 단톡방 주문을 Python으로 자동 정리, 정확도 약 60%에서 약 99%, 본인 보고</h2></section>
-<section data-s="2"><h2 class="sr">02 유튜브 제작 자동화: 썸네일 보정 3분에서 30초(6배), 자막 60분에서 5분(12배), 본인 보고</h2></section>
-<section data-s="3"><h2 class="sr">03 부모님을 위한 쇼츠 편집 프로그램: 복잡한 편집 화면을 세 단계로, MP4 출력 확인</h2></section>
-<section data-s="4"><h2 class="sr">04 친구 맞춤형 지출·루틴 앱: 금액 입력과 영수증 첨부 중심으로 빠르고 정확하게 맞춤 제작, 여행 정산 약 일주일에서 당일로, 사용자 보고</h2></section>
-<section data-s="5"><h2 class="sr">05 보건소 예약 안내 블로그: 같은 질문 문의 빈도 60% 감소(본인 보고), 누적 조회수 2,425회(기록, 2026.11.13 기준)</h2></section>
-<section data-s="6"><h2 class="sr">06 AI와 일하는 방식: 문제 정의와 결과 확인은 직접, 구현 5~9단계는 AI와 반복</h2></section>
-<section data-s="7"><h2 class="sr">07 방향: 나, 가까운 사람, 처음 만난 사람들, 더 많은 사람. 화면 속 예시는 설명용 재현입니다.</h2></section>
+<section id="ch1" data-s="1"><h2 class="sr">01 회사 주문 정리 자동화: 단톡방 주문을 Python으로 자동 정리, 정확도 약 60%에서 약 99%, 본인 보고</h2></section>
+<section id="ch2" data-s="2"><h2 class="sr">02 유튜브 제작 자동화: 썸네일 보정 3분에서 30초(6배), 자막 60분에서 5분(12배), 본인 보고</h2></section>
+<section id="ch3" data-s="3"><h2 class="sr">03 부모님을 위한 쇼츠 편집 프로그램: 복잡한 편집 화면을 세 단계로, MP4 출력 확인</h2></section>
+<section id="ch4" data-s="4"><h2 class="sr">04 친구 맞춤형 지출·루틴 앱: 금액 입력과 영수증 첨부 중심으로 빠르고 정확하게 맞춤 제작, 여행 정산 약 일주일에서 당일로, 사용자 보고</h2></section>
+<section id="ch5" data-s="5"><h2 class="sr">05 보건소 예약 안내 블로그: 같은 질문 문의 빈도 60% 감소(본인 보고), 누적 조회수 2,425회(기록, 2026.11.13 기준)</h2></section>
+<section id="ch6" data-s="6"><h2 class="sr">06 AI와 일하는 방식: 문제 정의와 결과 확인은 직접, 구현 5~9단계는 AI와 반복</h2></section>
+<section id="ch7" data-s="7"><h2 class="sr">07 방향: 나, 가까운 사람, 처음 만난 사람들, 더 많은 사람. 화면 속 예시는 설명용 재현입니다.</h2></section>
 
 <script>
 (() => {
@@ -474,7 +474,7 @@
     ctx.fillStyle=rgba(C.bg,1); ctx.fillRect(0,0,W,H);
     ctx.save(); scenes[i](p,T,a); ctx.restore();
     const tot=document.documentElement.scrollHeight-H; bar.style.width=(tot>0?y/tot*100:0)+'%';
-    if(i!==lastOn){ dots.forEach((d,k)=>d.classList.toggle('on',k===i)); caseLink.classList.toggle('on',i===1); lastOn=i; }
+    if(i!==lastOn){ dots.forEach((d,k)=>d.classList.toggle('on',k===i)); const cl={1:'case-01.html',3:'case-02.html'}[i]; if(cl) caseLink.href=cl; caseLink.classList.toggle('on',!!cl); lastOn=i; }
     requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);

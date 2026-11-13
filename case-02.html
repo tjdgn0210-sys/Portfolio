@@ -1,0 +1,444 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>고를 건 둘, 결과는 그대로</title>
+<meta name="description" content="AI WORKFLOW / CASE 02 — 부모님이 혼자 쓰는 영상 자동 편집 프로그램 AutoEdit">
+<style>
+  :root{
+    --bg:#0c0c0f; --panel:#18181e; --panel2:#1f1f27; --line:rgba(239,233,221,.1);
+    --ink:#efe9dd; --dim:rgba(239,233,221,.55); --faint:rgba(239,233,221,.32);
+    --red:#e85640; --amber:#f0b048; --mint:#6ed6b2; --sky:#78afeb;
+    --ease:cubic-bezier(.2,.7,.2,1);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{background:var(--bg);scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--ink);font-family:"Pretendard",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",sans-serif;line-height:1.55;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+  a{color:inherit}
+  button{font:inherit;color:inherit}
+  :focus-visible{outline:2px solid var(--mint);outline-offset:3px;border-radius:6px}
+  .wrap{width:min(1080px,100% - 32px);margin:0 auto}
+  section{padding:clamp(88px,14vh,160px) 0}
+  .eyebrow{font-size:12px;font-weight:700;letter-spacing:.14em;color:var(--mint)}
+  .label{font-size:12px;font-weight:700;letter-spacing:.12em;color:var(--faint);text-transform:uppercase}
+  h2{font-size:clamp(28px,4.6vw,48px);font-weight:800;letter-spacing:-.02em;line-height:1.2;margin-top:14px}
+  .lead{color:var(--dim);font-size:clamp(15px,1.8vw,18px);margin-top:14px;max-width:580px}
+  .note{font-size:12px;color:var(--faint)}
+  .tnum{font-variant-numeric:tabular-nums}
+
+  .top{position:fixed;inset:0 0 auto 0;z-index:20;display:flex;justify-content:space-between;align-items:center;padding:14px 16px;background:linear-gradient(var(--bg),rgba(12,12,15,0))}
+  .top a{font-size:13px;color:var(--dim);text-decoration:none;padding:8px 12px;border:1px solid var(--line);border-radius:999px;background:rgba(12,12,15,.6);transition:color .2s,border-color .2s}
+  .top a:hover{color:var(--ink);border-color:var(--faint)}
+  .top span{font-size:12px;color:var(--faint);letter-spacing:.1em}
+
+  .js .rv{opacity:0;transform:translateY(24px);transition:opacity .9s var(--ease),transform .9s var(--ease)}
+  .js .rv.in{opacity:1;transform:none}
+
+  /* HERO: 복잡한 편집 화면 → 두 장의 카드 */
+  .hero{min-height:100svh;display:flex;align-items:center;padding-top:96px}
+  .hero h1{font-size:clamp(44px,8.6vw,100px);font-weight:800;letter-spacing:-.035em;line-height:1.06;margin-top:18px}
+  .hero h1 em{font-style:normal;color:var(--mint)}
+  .hero .sub{font-size:clamp(17px,2.2vw,22px);color:var(--dim);margin-top:18px}
+  .morph{margin-top:clamp(36px,6vh,64px);display:grid;grid-template-columns:1fr auto 1fr;gap:clamp(12px,3vw,28px);align-items:center;max-width:820px}
+  .win{border:1px solid var(--line);border-radius:14px;background:var(--panel);padding:12px;aspect-ratio:16/10;position:relative;overflow:hidden}
+  .win .dots{display:flex;gap:6px;margin-bottom:10px}.win .dots i{width:8px;height:8px;border-radius:50%;background:var(--faint)}
+  .busy{display:grid;grid-template-columns:repeat(14,1fr);gap:4px}
+  .busy i{height:9px;border-radius:2px;background:rgba(239,233,221,.16)}
+  .busy i:nth-child(5n){background:rgba(240,176,72,.5)}
+  .busy i:nth-child(7n){background:rgba(232,86,64,.5)}
+  .tracks{margin-top:10px;display:flex;flex-direction:column;gap:5px}
+  .tracks i{height:12px;border-radius:3px;background:repeating-linear-gradient(90deg,rgba(110,214,178,.45) 0 18%,transparent 18% 21%,rgba(120,175,235,.45) 21% 34%,transparent 34% 37%)}
+  .tracks i:nth-child(2){background-position:30px 0;opacity:.8}.tracks i:nth-child(3){background-position:60px 0;opacity:.6}
+  .win .qs{position:absolute;right:12px;bottom:8px;font-size:22px;font-weight:800;color:var(--red)}
+  .simple{display:grid;grid-template-columns:1fr 1fr;gap:10px;height:calc(100% - 18px)}
+  .simple div{border-radius:12px;border:1px solid var(--line);background:var(--panel2);display:flex;flex-direction:column;justify-content:center;padding:12px;font-size:clamp(12px,1.5vw,15px);font-weight:700}
+  .simple div.on{border-color:var(--mint);background:rgba(110,214,178,.12);color:var(--mint)}
+  .simple small{font-size:11px;font-weight:500;color:var(--faint);margin-top:4px}
+  .morph .arr{font-size:28px;color:var(--faint)}
+  .js .morph .win.after{opacity:0;transform:scale(.94);transition:opacity .8s var(--ease) .7s,transform .8s var(--ease) .7s}
+  .js .morph.in .win.after{opacity:1;transform:none}
+  .morph .cap{font-size:12px;color:var(--faint);margin-top:8px;text-align:center}
+
+  /* 기능: 4개 장면 */
+  .feats{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-top:44px}
+  .feat{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:18px;transition:transform .35s var(--ease),border-color .35s}
+  .feat:hover{transform:translateY(-4px);border-color:rgba(110,214,178,.4)}
+  .feat h3{font-size:18px;font-weight:800}
+  .feat p{font-size:14px;color:var(--dim);margin-top:4px}
+  .stage{height:150px;margin-top:16px;border-radius:12px;background:#0f0f13;position:relative;overflow:hidden}
+  /* 무음 컷 */
+  .wave{position:absolute;inset:0;display:flex;align-items:center;gap:2px;padding:0 12px;transition:gap .8s var(--ease)}
+  .wave i{flex:1;border-radius:2px;background:var(--mint);transition:flex .8s var(--ease),opacity .8s,height .3s}
+  .wave i.s{background:var(--red);opacity:.55;height:4px!important}
+  .feat.play .wave i.s{flex:0;opacity:0;margin:0 -1px}
+  .tl{position:absolute;left:12px;bottom:10px;font-size:11px;color:var(--faint)}
+  /* 자막 */
+  .vid{position:absolute;inset:12px;border-radius:8px;background:linear-gradient(180deg,#5a87c0,#88b7e8 55%,#3f8a63 55%,#2f6d4e)}
+  .vid::before{content:"";position:absolute;right:16%;top:16%;width:26px;height:26px;border-radius:50%;background:#ffd660}
+  .subt{position:absolute;left:50%;bottom:20px;transform:translateX(-50%);background:rgba(12,12,15,.78);padding:5px 12px;border-radius:999px;font-size:13px;font-weight:700;white-space:nowrap;opacity:0;transition:opacity .4s}
+  .subt.on{opacity:1}
+  .chipline{position:absolute;left:18px;top:18px;display:flex;gap:6px}
+  .chipline span{font-size:10px;font-weight:700;background:rgba(12,12,15,.7);padding:3px 7px;border-radius:999px}
+  /* 쇼츠 */
+  .sh{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+  .frame{position:relative;width:200px;height:112px;border-radius:8px;overflow:hidden;transition:width .9s var(--ease),height .9s var(--ease)}
+  .frame .blur{position:absolute;inset:-20px;background:linear-gradient(180deg,#5a87c0,#88b7e8 55%,#3f8a63 55%);filter:blur(10px);opacity:0;transition:opacity .9s}
+  .frame .src{position:absolute;left:50%;top:50%;width:200px;height:112px;transform:translate(-50%,-50%);border-radius:4px;background:linear-gradient(180deg,#5a87c0,#88b7e8 55%,#3f8a63 55%,#2f6d4e)}
+  .frame .src::before{content:"";position:absolute;right:16%;top:16%;width:18px;height:18px;border-radius:50%;background:#ffd660}
+  .feat.play .frame{width:72px;height:128px;outline:2px solid var(--mint);outline-offset:2px}
+  .feat.play .frame .blur{opacity:.9}
+  .feat.play .frame .src{width:72px;height:40px}
+  .ratio{position:absolute;right:12px;bottom:10px;font-size:12px;font-weight:800;color:var(--mint)}
+  .fills{position:absolute;left:12px;bottom:10px;display:flex;gap:6px;font-size:11px;color:var(--faint)}
+  /* 군말 */
+  .words{position:absolute;inset:0;display:flex;flex-wrap:wrap;align-content:center;justify-content:center;gap:6px;padding:12px}
+  .words span{font-size:15px;font-weight:700;padding:4px 9px;border-radius:8px;background:var(--panel2);transition:all .6s var(--ease);max-width:200px;overflow:hidden;white-space:nowrap}
+  .words span.f{color:var(--red);background:rgba(232,86,64,.14)}
+  .feat.play .words span.f{max-width:0;padding:4px 0;margin:0 -3px;opacity:0}
+
+  /* 직접 눌러 보기: 옵션 화면 재현 */
+  .try{display:grid;grid-template-columns:1.2fr 1fr;gap:16px;margin-top:40px}
+  .pane{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:18px;min-width:0}
+  .pane h3{font-size:12px;font-weight:700;letter-spacing:.08em;color:var(--faint);margin-bottom:12px}
+  .cards{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .opt{all:unset;cursor:pointer;border:1.5px solid var(--line);border-radius:14px;padding:14px;background:var(--panel2);transition:border-color .25s,background .25s}
+  .opt b{display:block;font-size:15px}
+  .opt span{display:block;font-size:12px;color:var(--faint);margin-top:4px}
+  .opt[aria-checked="true"]{border-color:var(--mint);background:rgba(110,214,178,.1)}
+  .opt[aria-checked="true"] b{color:var(--mint)}
+  .opt:focus-visible{outline:2px solid var(--mint);outline-offset:2px}
+  .sublist{margin-top:16px;display:flex;flex-direction:column;gap:12px;transition:opacity .3s}
+  .sublist.off{opacity:.3;pointer-events:none}
+  .seg{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .seg>span{font-size:13px;color:var(--dim);width:40px}
+  .seg [role=radiogroup]{display:flex;gap:6px;flex-wrap:wrap}
+  .pill{all:unset;cursor:pointer;font-size:13px;font-weight:700;padding:8px 12px;border-radius:999px;border:1px solid var(--line);transition:all .2s}
+  .pill[aria-checked="true"]{background:var(--mint);color:var(--bg);border-color:var(--mint)}
+  .pill:focus-visible{outline:2px solid var(--mint);outline-offset:2px}
+  .files{list-style:none;display:flex;flex-direction:column;gap:8px}
+  .files li{display:flex;align-items:center;gap:10px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;padding:10px 12px;border-radius:10px;background:var(--panel2);animation:pop .35s var(--ease)}
+  .files li i{font-style:normal;font-family:inherit;font-size:10px;font-weight:800;padding:3px 6px;border-radius:5px;flex:none}
+  .files .mp4 i{background:rgba(110,214,178,.18);color:var(--mint)}
+  .files .srt i{background:rgba(240,176,72,.2);color:var(--amber)}
+  .files .wav i{background:rgba(120,175,235,.2);color:var(--sky)}
+  .files li span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  @keyframes pop{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .recreated{margin-top:12px}
+
+  /* 피드백 → 결정 */
+  .fb{display:flex;flex-direction:column;gap:14px;margin-top:40px}
+  .fbrow{display:grid;grid-template-columns:1fr 40px 1fr;align-items:center;gap:10px}
+  .say{background:var(--panel2);border-radius:18px 18px 18px 4px;padding:14px 16px;font-size:15px}
+  .say small{display:block;font-size:11px;color:var(--faint);margin-bottom:4px}
+  .act{background:rgba(110,214,178,.08);border:1px solid rgba(110,214,178,.3);border-radius:14px;padding:14px 16px;font-size:15px}
+  .act small{display:block;font-size:11px;color:var(--mint);margin-bottom:4px;font-weight:700}
+  .fbrow .to{text-align:center;color:var(--faint);font-size:20px}
+
+  /* 숫자 */
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:40px}
+  .stat{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px}
+  .stat b{display:block;font-size:clamp(28px,4vw,40px);font-weight:800;letter-spacing:-.02em;color:var(--mint)}
+  .stat span{font-size:13px;color:var(--dim)}
+  .dec{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-top:14px}
+  .dec div{padding:16px 18px;border-radius:14px;border:1px solid var(--line)}
+  .dec b{display:block;font-size:15px}
+  .dec span{font-size:13px;color:var(--dim)}
+
+  /* 결과 */
+  .outcome{text-align:center}
+  .quote{font-size:clamp(24px,4vw,40px);font-weight:800;letter-spacing:-.02em;line-height:1.35;margin-top:18px}
+  .quote em{font-style:normal;color:var(--mint)}
+  .badge{display:inline-block;font-size:11px;color:var(--faint);border:1px solid var(--line);padding:3px 10px;border-radius:999px;margin-top:18px}
+  .checks{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin:40px auto 0;max-width:760px;text-align:left}
+  .checks div{padding:14px 16px;border-radius:14px;background:var(--panel);border:1px solid var(--line);font-size:14px}
+  .checks div b{display:block;font-size:12px;margin-bottom:4px}
+  .checks .ok b{color:var(--mint)} .checks .no b{color:var(--amber)}
+
+  .role{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:40px;list-style:none}
+  .role li{padding:20px;border-radius:16px;background:var(--panel);border:1px solid var(--line)}
+  .role li b{display:block;font-size:13px;color:var(--mint);margin-bottom:8px;letter-spacing:.06em}
+  .role li span{font-size:15px}
+  .back{display:inline-block;margin-top:56px;padding:12px 18px;border:1px solid var(--line);border-radius:999px;text-decoration:none;color:var(--dim);transition:color .2s,border-color .2s}
+  .back:hover{color:var(--ink);border-color:var(--faint)}
+  footer{padding:40px 0 56px;color:var(--faint);font-size:12px}
+
+  @media (max-width:860px){
+    .try{grid-template-columns:1fr}
+    .stats{grid-template-columns:1fr 1fr}
+    .role{grid-template-columns:1fr 1fr}
+  }
+  @media (max-width:600px){
+    .morph{grid-template-columns:1fr}
+    .morph .arr{transform:rotate(90deg);justify-self:center;line-height:1}
+    .feats{grid-template-columns:1fr}
+    .fbrow{grid-template-columns:1fr}
+    .fbrow .to{transform:rotate(90deg)}
+    .dec,.checks,.role{grid-template-columns:1fr}
+  }
+  @media (prefers-reduced-motion:reduce){
+    html{scroll-behavior:auto}
+    *,*::before,*::after{transition:none!important;animation:none!important}
+    .js .rv,.js .morph .win.after{opacity:1;transform:none}
+  }
+</style>
+<script>document.documentElement.classList.add('js')</script>
+</head>
+<body>
+<header class="top">
+  <a href="index.html#ch3">← 포트폴리오</a>
+  <span>CASE 02</span>
+</header>
+
+<main>
+  <!-- HERO -->
+  <section class="hero" aria-labelledby="h-hero">
+    <div class="wrap">
+      <p class="eyebrow rv">AI WORKFLOW / CASE 02 · AutoEdit</p>
+      <h1 id="h-hero" class="rv">고를 건 <em>둘</em>,<br>결과는 그대로.</h1>
+      <p class="sub rv">부모님이 혼자 쓰는 영상 자동 편집 프로그램.</p>
+
+      <div class="morph rv" aria-hidden="true">
+        <div>
+          <div class="win before">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <div class="busy"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+            <div class="tracks"><i></i><i></i><i></i></div>
+            <span class="qs">?</span>
+          </div>
+          <p class="cap">흔한 편집 프로그램</p>
+        </div>
+        <div class="arr">→</div>
+        <div>
+          <div class="win after">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <div class="simple">
+              <div class="on">무음 컷 편집 + 자막<small>mp4</small></div>
+              <div>자막 파일만<small>srt</small></div>
+            </div>
+          </div>
+          <p class="cap">AutoEdit 옵션 화면 (재현)</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 기능 -->
+  <section aria-labelledby="h-feat">
+    <div class="wrap">
+      <p class="label rv">What it does</p>
+      <h2 id="h-feat" class="rv">영상을 넣으면, 나머지는 프로그램이.</h2>
+      <p class="lead rv">말이 없는 구간을 자르고, 목소리를 자막으로 만들고, 가로 영상을 쇼츠로 바꿉니다. 모든 처리는 내 PC 안에서 이루어집니다.</p>
+
+      <div class="feats">
+        <article class="feat rv" data-play>
+          <h3>무음 컷</h3><p>말이 없는 구간을 잘라 낸 mp4</p>
+          <div class="stage" aria-hidden="true"><div class="wave" id="wave"></div><span class="tl">빨간 구간 = 무음</span></div>
+        </article>
+        <article class="feat rv" data-play>
+          <h3>자동 자막</h3><p>faster-whisper 음성 인식 · 영상에 입히거나 srt로</p>
+          <div class="stage" aria-hidden="true"><div class="vid"></div><div class="chipline"><span>글꼴</span><span>색</span><span>테두리</span><span>둥근 박스</span></div><div class="subt" id="subt"></div></div>
+        </article>
+        <article class="feat rv" data-play>
+          <h3>쇼츠 9:16</h3><p>전체 보이게 · 직접 조정 · 빈 곳은 흐린 영상/검은색/고른 색</p>
+          <div class="stage" aria-hidden="true"><div class="sh"><div class="frame"><div class="blur"></div><div class="src"></div></div></div><span class="fills">흐린 영상 · 검은색 · 고른 색</span><span class="ratio" id="ratio">16:9</span></div>
+        </article>
+        <article class="feat rv" data-play>
+          <h3>군말 빼기</h3><p>‘어·음’은 항상, ‘그·저기’는 멈추거나 늘일 때만</p>
+          <div class="stage" aria-hidden="true"><div class="words"><span class="f">어</span><span>오늘은</span><span class="f">음</span><span>텃밭에서</span><span>상추를</span><span class="f">어</span><span>땄어요</span></div></div>
+        </article>
+      </div>
+      <p class="note recreated rv">기능 설명용 그림입니다. 실제 프로그램 화면이 아닙니다. 자막 문장은 예시입니다.</p>
+    </div>
+  </section>
+
+  <!-- 직접 눌러 보기 -->
+  <section aria-labelledby="h-try">
+    <div class="wrap">
+      <p class="label rv">Try it</p>
+      <h2 id="h-try" class="rv">눌러 보면, 만들어질 파일이 바로 보입니다.</h2>
+      <p class="lead rv">무엇이 나올지 미리 알면 덜 불안합니다. 고르는 즉시 결과 파일 목록이 바뀝니다.</p>
+      <div class="try rv">
+        <div class="pane">
+          <h3>무엇을 할까요?</h3>
+          <div class="cards" role="radiogroup" aria-label="작업 종류">
+            <button type="button" class="opt" role="radio" data-mode="cut" aria-checked="true"><b>무음 컷 편집 + 자막</b><span>말 없는 구간을 잘라 낸 mp4</span></button>
+            <button type="button" class="opt" role="radio" data-mode="subs" aria-checked="false"><b>자막 파일만</b><span>영상은 그대로, srt만</span></button>
+          </div>
+          <div class="sublist" id="sublist">
+            <div class="seg"><span>자막</span>
+              <div role="radiogroup" aria-label="자막">
+                <button type="button" class="pill" role="radio" data-sub="burn" aria-checked="true">영상에 입히기</button>
+                <button type="button" class="pill" role="radio" data-sub="file" aria-checked="false">따로 파일(srt)</button>
+              </div>
+            </div>
+            <div class="seg"><span>소리</span>
+              <div role="radiogroup" aria-label="소리">
+                <button type="button" class="pill" role="radio" data-aud="mux" aria-checked="true">영상에 합치기</button>
+                <button type="button" class="pill" role="radio" data-aud="split" aria-checked="false">따로 파일(wav)</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="pane">
+          <h3>만들어지는 파일</h3>
+          <ul class="files" id="files" aria-live="polite"></ul>
+        </div>
+      </div>
+      <p class="note recreated rv">옵션 화면을 단순화해 재현했습니다. mp4 이름 규칙(_edited, _subtitled, _video)은 실제 코드의 규칙을 따랐고, srt·wav 이름과 ‘강의’라는 파일명은 예시입니다.</p>
+    </div>
+  </section>
+
+  <!-- 피드백 → 결정 -->
+  <section aria-labelledby="h-fb">
+    <div class="wrap">
+      <p class="label rv">Feedback</p>
+      <h2 id="h-fb" class="rv">쓰는 사람의 말이 기본값이 됐습니다.</h2>
+      <div class="fb">
+        <div class="fbrow rv">
+          <div class="say"><small>사용자</small>“선택할 게 너무 많다”</div>
+          <div class="to" aria-hidden="true">→</div>
+          <div class="act"><small>결정</small>옵션 화면을 카드 2개로 줄이고, 세부 선택은 둘 중 하나로</div>
+        </div>
+        <div class="fbrow rv">
+          <div class="say"><small>사용자</small>“mp4가 나오면 소리가 따로 나와서 불편”</div>
+          <div class="to" aria-hidden="true">→</div>
+          <div class="act"><small>결정</small>기본값을 ‘소리 합치기 + 자막 입히기’로 뒤집음</div>
+        </div>
+        <div class="fbrow rv">
+          <div class="say"><small>사용자</small>기존 기능은 지우지 말아 달라</div>
+          <div class="to" aria-hidden="true">→</div>
+          <div class="act"><small>결정</small>화면에서는 숨기고, 명령줄 옵션으로 남김</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 만든 것 -->
+  <section aria-labelledby="h-build">
+    <div class="wrap">
+      <p class="label rv">Build</p>
+      <h2 id="h-build" class="rv">보이지 않는 곳을 더 단단하게.</h2>
+      <div class="stats">
+        <div class="stat rv"><b class="tnum">4,544</b><span>줄 · 화면(GUI) 코드</span></div>
+        <div class="stat rv"><b class="tnum">1,662</b><span>줄 · 컷·자막·쇼츠 처리 코드</span></div>
+        <div class="stat rv"><b>exe</b><span>설치 없이 실행되는 Windows 프로그램</span></div>
+        <div class="stat rv"><b>KO / EN</b><span>한국어·영어 화면, 다크 모드</span></div>
+      </div>
+      <div class="dec">
+        <div class="rv"><b>여러 줄 자막도 하나의 둥근 박스</b><span>줄마다 박스가 겹쳐 진한 선이 생기던 문제를, 박스를 직접 그려서 해결</span></div>
+        <div class="rv"><b>작업 중 검은 창이 뜨지 않게</b><span>모든 실행 경로에서 터미널 창을 숨겨, 놀라지 않도록</span></div>
+        <div class="rv"><b>그래픽카드가 없어도</b><span>GPU 인코딩을 먼저 시험하고, 안 되면 CPU로 자동 전환</span></div>
+        <div class="rv"><b>남은 시간이 맞아지도록</b><span>PC별 처리 속도를 학습해 진행률을 보정</span></div>
+      </div>
+      <p class="note recreated rv">Python · tkinter · FFmpeg · faster-whisper · PyInstaller. 줄 수는 2026-10-26 저장소 기준입니다.</p>
+    </div>
+  </section>
+
+  <!-- 결과 -->
+  <section class="outcome" aria-labelledby="h-out">
+    <div class="wrap">
+      <p class="label rv">Outcome</p>
+      <h2 id="h-out" class="quote rv">짧은 설명 후,<br><em>“혼자서도 쓸 수 있겠다.”</em></h2>
+      <span class="badge rv">부모님의 첫 반응 · 사용자 보고 · 한 가족의 테스트</span>
+      <div class="checks">
+        <div class="ok rv"><b>확인함</b>컷·자막·쇼츠·군말 빼기 기능 동작 (개발 문서 기준)</div>
+        <div class="ok rv"><b>확인함</b>인터넷·ffmpeg 설치 없는 환경에서 실행</div>
+        <div class="no rv"><b>아직</b>다른 PC에서 실제 사용, 마우스 조작감</div>
+        <div class="no rv"><b>아직</b>판매 전 · 시장 검증 전</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 역할 -->
+  <section aria-labelledby="h-role">
+    <div class="wrap">
+      <p class="label rv">My role</p>
+      <h2 id="h-role" class="rv">제가 한 일</h2>
+      <ol class="role">
+        <li class="rv"><b>01 발견</b><span>편집이 어려워 영상을 미루는 가족을 봤습니다.</span></li>
+        <li class="rv"><b>02 설계</b><span>고를 것을 줄이고, 결과 파일을 미리 보여 주는 화면을 정했습니다.</span></li>
+        <li class="rv"><b>03 구현</b><span>Claude Code와 함께 Python 프로그램과 exe를 만들었습니다.</span></li>
+        <li class="rv"><b>04 반영</b><span>써 본 사람의 불편을 기본값과 화면에 다시 반영했습니다.</span></li>
+      </ol>
+      <a class="back rv" href="index.html#ch3">← 포트폴리오로 돌아가기</a>
+    </div>
+  </section>
+</main>
+<footer><div class="wrap">SK AIGEN 지원 포트폴리오 · CASE 02</div></footer>
+
+<script>
+(() => {
+  'use strict';
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const hasIO = 'IntersectionObserver' in window;
+
+  // 스크롤 등장
+  const rv = document.querySelectorAll('.rv');
+  if (hasIO && !reduce) {
+    const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { threshold: .15 });
+    rv.forEach(el => io.observe(el));
+  } else rv.forEach(el => el.classList.add('in'));
+
+  // 파형 막대 생성 (일부는 무음)
+  const wave = document.getElementById('wave');
+  const silent = new Set([6,7,8,9,18,19,20,30,31,32,33,34]);
+  for (let i = 0; i < 40; i++) { const b = document.createElement('i'); if (silent.has(i)) b.className = 's'; else b.style.height = (18 + Math.abs(Math.sin(i * .9) + Math.sin(i * .37)) * 38) + 'px'; wave.appendChild(b); }
+
+  // 기능 카드: 보이는 동안 전/후 반복
+  const subt = document.getElementById('subt'), ratio = document.getElementById('ratio');
+  const lines = ['오늘은 텃밭에서', '상추를 땄어요'];
+  let li = 0;
+  const cards = [...document.querySelectorAll('[data-play]')];
+  function tick() {
+    cards.forEach(c => c.classList.toggle('play'));
+    const on = cards[0].classList.contains('play');
+    subt.textContent = lines[li++ % lines.length]; subt.classList.toggle('on', on);
+    ratio.textContent = on ? '9:16' : '16:9';
+  }
+  if (reduce || !hasIO) { cards.forEach(c => c.classList.add('play')); subt.textContent = lines[0]; subt.classList.add('on'); ratio.textContent = '9:16'; }
+  else {
+    let timer = null;
+    new IntersectionObserver(es => es.forEach(e => {
+      if (e.isIntersecting && !timer) { tick(); timer = setInterval(tick, 2200); }
+      else if (!e.isIntersecting && timer) { clearInterval(timer); timer = null; }
+    }), { threshold: .2 }).observe(document.querySelector('.feats'));
+  }
+
+  // 옵션 화면 재현: 만들어질 파일 목록
+  const state = { mode: 'cut', sub: 'burn', aud: 'mux' };
+  const files = document.getElementById('files'), sublist = document.getElementById('sublist');
+  // 실제 규칙: stem_{edited|original}[_subtitled][_video].mp4
+  const mp4 = (edited, burn, mux) => '강의_' + (edited ? 'edited' : 'original') + (burn ? '_subtitled' : '') + (mux ? '' : '_video') + '.mp4';
+  function render() {
+    const out = [];
+    if (state.mode === 'subs') out.push(['srt', '강의.srt']);
+    else {
+      out.push(['mp4', mp4(true, state.sub === 'burn', state.aud === 'mux')]);
+      if (state.sub === 'file') out.push(['srt', '강의.srt']);
+      if (state.aud === 'split') out.push(['wav', '강의.wav']);
+    }
+    files.innerHTML = '';
+    out.forEach(([k, n]) => { const li = document.createElement('li'); li.className = k; li.innerHTML = '<i>' + k.toUpperCase() + '</i><span></span>'; li.querySelector('span').textContent = n; files.appendChild(li); });
+    sublist.classList.toggle('off', state.mode !== 'cut');
+    sublist.querySelectorAll('button').forEach(b => b.tabIndex = state.mode === 'cut' ? 0 : -1);
+  }
+  function bindGroup(sel, key) {
+    const btns = [...document.querySelectorAll(sel)];
+    const pick = b => { btns.forEach(x => x.setAttribute('aria-checked', x === b ? 'true' : 'false')); state[key] = b.dataset[key]; render(); };
+    btns.forEach((b, i) => {
+      b.addEventListener('click', () => pick(b));
+      b.addEventListener('keydown', e => {
+        if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+          e.preventDefault(); const d = (e.key === 'ArrowRight' || e.key === 'ArrowDown') ? 1 : -1;
+          const n = btns[(i + d + btns.length) % btns.length]; n.focus(); pick(n);
+        }
+      });
+    });
+  }
+  bindGroup('[data-mode]', 'mode'); bindGroup('[data-sub]', 'sub'); bindGroup('[data-aud]', 'aud');
+  render();
+})();
+</script>
+</body>
+</html>
