@@ -546,6 +546,7 @@
     // 누적 조회수 강조
     const h=seg(p,.84,.88);
     if(h>0){ const [x,y,w,hh]=EV_HL; const pad=6+(1-h)*20; rr(fx+x*k-pad,fy+y*k-pad,w*k+pad*2,hh*k+pad*2,10); ctx.strokeStyle=rgba(C.mint,h*a); ctx.lineWidth=3; ctx.stroke(); }
+    txt('실제 제 블로그 통계 화면입니다',W/2,fy-S*.07,Math.max(14,S*.03),a*(1-seg(p,.88,.92)),700,'center',C.ink);
     txt('누적 조회수 2,425회',W/2,fy+fh+S*.07,Math.max(16,S*.04),a*seg(p,.84,.88),800,'center',C.mint);
   }
   function s5(p,t,a){
